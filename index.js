@@ -14,7 +14,7 @@ const connection = mysql.createConnection({
   host: "localhost", // Replace with your MySQL host
   user: "root", // Replace with your MySQL username
   password: "", // Replace with your MySQL password
-  database: "p8_juanhr_db", // Replace with your database name
+  database: "project_db", // Replace with your database name
 });
 
 const server = http.createServer((req, res) => {
