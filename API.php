@@ -73,16 +73,16 @@ class API extends Main implements ModuleInterface
      */
     public function httpGet(array $payload, bool $api = true)
     {
-        $this->Logger->logDebug("SERVER". __LINE__, [$_SERVER]);
+        $this->Logger->logDebug("SERVER" . __LINE__, [$_SERVER]);
         try {
             if ($_SERVER["REDIRECT_URL"]) {
                 $exploded_request_url = array_values(explode("/", $_SERVER["REDIRECT_URL"]));
-                $this->Logger->logDebug("exploded_request_url". __LINE__, [$exploded_request_url]);
+                $this->Logger->logDebug("exploded_request_url" . __LINE__, [$exploded_request_url]);
                 // request for getting the commands from server
                 if (end($exploded_request_url) === 'getrequest') {
                     $this->db->where('device_serial_number', $_GET['SN']);
                     $to_create_commands = $this->db->get($this->table);
-                    $this->Logger->logDebug("to_create_commands ADMS API". __LINE__, [$to_create_commands]);
+                    $this->Logger->logDebug("to_create_commands ADMS API" . __LINE__, [$to_create_commands]);
                     if ($this->db->getLastErrno() > 0) {
                         // Log error
                         $this->Logger->logError('Failed to get ADMS command', [$this->db->getLastError()]);
@@ -172,7 +172,7 @@ class API extends Main implements ModuleInterface
                             }
                         }
                         if ($returned_commands) {
-                            $this->Logger->logDebug("Commands ADMS". __LINE__, [$returned_commands]);
+                            $this->Logger->logDebug("Commands ADMS" . __LINE__, [$returned_commands]);
                             exit($returned_commands);
                         }
                     }
@@ -194,7 +194,7 @@ class API extends Main implements ModuleInterface
      */
     public function httpPost(array $payload)
     {
-        $this->Logger->logDebug("httpPost _GET". __LINE__, [$_GET]);
+        $this->Logger->logDebug("httpPost _GET" . __LINE__, [$_GET]);
         $this->Logger->logDebug("ADMS Data" . __LINE__, [file_get_contents('php://input')]);
         try {
             if ($_GET) {
@@ -467,11 +467,9 @@ class API extends Main implements ModuleInterface
                                         $this->db->where('emp_user_id', $columns[5]);
                                         $this->db->where('device_id', $biometrics_data['device_id']);
                                         $this->db->delete('emp_biometrics_registration');
-
                                     } else {
-                                        $data_to_insert = array('log_type' =>$columns[1], 'device_serial_number' => $serial_number, 'logs_date' => $current_datetime);
+                                        $data_to_insert = array('log_type' => $columns[1], 'device_serial_number' => $serial_number, 'logs_date' => $current_datetime);
                                     }
-
                                 } elseif ($columns[0] === 'USER') {
 
                                     $userid = substr($columns[1], 4);
@@ -647,11 +645,11 @@ class API extends Main implements ModuleInterface
                                                 if ($emp_template_info) {
                                                     $fp_data = array_filter(
                                                         $emp_template_info,
-                                                        fn ($temp_info) => $temp_info['type'] == '1'
+                                                        fn($temp_info) => $temp_info['type'] == '1'
                                                     );
                                                     $face_data = array_filter(
                                                         $emp_template_info,
-                                                        fn ($temp_info) => $temp_info['type'] == '2' || $temp_info['type'] == '9'
+                                                        fn($temp_info) => $temp_info['type'] == '2' || $temp_info['type'] == '9'
                                                     );
 
 
@@ -690,7 +688,16 @@ class API extends Main implements ModuleInterface
                                         }
                                         exit('OK');
                                     } else {
+                                        // Delete data if enroll finger print failed or duplicate
+                                        if (($data_res['Return'] === "4" || $data_res['Return'] === "5") && $data_res['CMD'] === "ENROLL_FP") {
+                                            // Execute Delete query
+                                            $this->db->where('id', $data_res["ID"]);
+                                            $this->db->where('device_serial_number', $_GET['SN']);
+                                            $this->db->delete($this->table);
+                                        }
+
                                         $this->Logger->logError('returned data was not success', [$data_res]);
+
                                         exit('OK');
                                     }
                                 }
@@ -700,7 +707,7 @@ class API extends Main implements ModuleInterface
                     }
                 }
             } else {
-                $this->Logger->logDebug("No GET data". __LINE__, [$_GET]);
+                $this->Logger->logDebug("No GET data" . __LINE__, [$_GET]);
             }
             exit('OK');
         } catch (\Throwable $th) {
@@ -790,10 +797,10 @@ class API extends Main implements ModuleInterface
         $log_types = ['Clocked In', 'Clocked Out'];
         $formatted_time = date('g:i A', strtotime($time));
 
-        $message = "You've successfuly {$log_types[$log_type]} at $formatted_time.";
+        $message = "You've successfuly <b>{$log_types[$log_type]}</b> at <b>$formatted_time</b>.";
         if ($this->Notification->createNotification([$account_id], $message, '/juanHR/dtr', $system_id)) {
             $title = 'JuanHR Mobile';
-            $this->Notification->sendMobileNotification([$account_id], $title, $message);
+            $this->Notification->sendMobileNotification([$account_id], $title, str_replace(['<b>', '</b>'], '', $message));
         }
     }
 }
